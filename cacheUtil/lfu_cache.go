@@ -1,32 +1,32 @@
-package lfu
+package cacheUtil
 
 import (
 	"fmt"
 	"sync"
 )
 
-type node[K comparable, V any] struct {
+type lfuNode[K comparable, V any] struct {
 	key   K
 	value V
 	freq  int
-	next  *node[K, V]
-	prev  *node[K, V]
+	next  *lfuNode[K, V]
+	prev  *lfuNode[K, V]
 }
 
 type nodePair[K comparable, V any] struct {
-	head *node[K, V]
-	tail *node[K, V]
+	head *lfuNode[K, V]
+	tail *lfuNode[K, V]
 }
 
 type lfuCache[K comparable, V any] struct {
 	capacity int
 	freqMap  map[int]nodePair[K, V]
-	nodeMap  map[K]*node[K, V]
+	nodeMap  map[K]*lfuNode[K, V]
 	minFreq  int
 	mu       sync.RWMutex
 }
 
-func NewLFUCache[K comparable, V any](cacheSize int) (*lfuCache[K, V], error) {
+func NewLFUCache[K comparable, V any](cacheSize int) (Cache[K, V], error) {
 	if cacheSize <= 0 {
 		return nil, fmt.Errorf("can not initiate cache of size: %d", cacheSize)
 	}
@@ -34,19 +34,19 @@ func NewLFUCache[K comparable, V any](cacheSize int) (*lfuCache[K, V], error) {
 	return &lfuCache[K, V]{
 		capacity: cacheSize,
 		freqMap:  make(map[int]nodePair[K, V]),
-		nodeMap:  make(map[K]*node[K, V]),
+		nodeMap:  make(map[K]*lfuNode[K, V]),
 		minFreq:  0,
 	}, nil
 }
 
-func (cache *lfuCache[K, V]) getHead(freq int) *node[K, V] {
+func (cache *lfuCache[K, V]) getHead(freq int) *lfuNode[K, V] {
 	existingNodePair, exists := cache.freqMap[freq]
 	if exists {
 		return existingNodePair.head
 	}
 
-	newHead := &node[K, V]{}
-	newTail := &node[K, V]{}
+	newHead := &lfuNode[K, V]{}
+	newTail := &lfuNode[K, V]{}
 	newHead.next = newTail
 	newTail.prev = newHead
 	cache.freqMap[freq] = nodePair[K, V]{newHead, newTail}
@@ -54,7 +54,7 @@ func (cache *lfuCache[K, V]) getHead(freq int) *node[K, V] {
 	return cache.freqMap[freq].head
 }
 
-func (cache *lfuCache[K, V]) add(n *node[K, V]) {
+func (cache *lfuCache[K, V]) add(n *lfuNode[K, V]) {
 	headNode := cache.getHead(n.freq)
 
 	n.next = headNode.next
@@ -66,7 +66,7 @@ func (cache *lfuCache[K, V]) add(n *node[K, V]) {
 	cache.minFreq = n.freq
 }
 
-func (cache *lfuCache[K, V]) incrementFrequency(n *node[K, V]) {
+func (cache *lfuCache[K, V]) incrementFrequency(n *lfuNode[K, V]) {
 	n.prev.next = n.next
 	n.next.prev = n.prev
 
@@ -109,7 +109,7 @@ func (cache *lfuCache[K, V]) Put(key K, value V) {
 
 			delete(cache.nodeMap, lfuNode.key)
 		}
-		newNode := &node[K, V]{key: key, value: value, freq: 1}
+		newNode := &lfuNode[K, V]{key: key, value: value, freq: 1}
 		cache.add(newNode)
 	}
 }
@@ -132,6 +132,6 @@ func (cache *lfuCache[K, V]) Get(key K) (V, bool) {
 
 func (cache *lfuCache[K, V]) Clear() {
 	cache.freqMap = make(map[int]nodePair[K, V])
-	cache.nodeMap = map[K]*node[K, V]{}
+	cache.nodeMap = map[K]*lfuNode[K, V]{}
 	cache.minFreq = 0
 }
