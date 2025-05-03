@@ -3,34 +3,21 @@ package main
 import (
 	"fmt"
 
-	cache "github.com/kesarihardik/cache/cacheUtil"
+	lfu "github.com/kesarihardik/cache/cacheUtil/lfu"
 )
 
-func get[K comparable, V any](cache *cache.LRUCache[K, V], key K) {
-	val, exists := cache.Get(key)
-	if exists {
-		fmt.Println(val)
-	} else {
-		fmt.Println("cache miss.")
-	}
-}
-
 func main() {
-	fmt.Print()
-	cache, error := cache.NewLRUCache[int, string](2)
+	c, err := lfu.NewLFUCache[int, string](2)
 
-	if error != nil {
-		fmt.Print(error)
+	if err != nil {
+		fmt.Print("not allocated")
 	}
 
-	get(cache, 2)
+	fmt.Println(c.Get(2))
 
-	cache.Put(1, "first")
-	cache.Put(2, "second")
-
-	get(cache, 1)
-
-	cache.Put(3, "third")
-
-	get(cache, 3)
+	c.Put(1, "first")
+	c.Put(2, "second")
+	fmt.Println(c.Get(2))
+	c.Put(3, "third")
+	fmt.Println(c.Get(1))
 }
