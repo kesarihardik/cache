@@ -1,4 +1,4 @@
-package cacheUtil
+package cache
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ type lfuCache[K comparable, V any] struct {
 
 func NewLFUCache[K comparable, V any](cacheSize int) (Cache[K, V], error) {
 	if cacheSize <= 0 {
-		return nil, fmt.Errorf("can not initiate cache of size: %d", cacheSize)
+		return nil, fmt.Errorf("invalid cache size: %d", cacheSize)
 	}
 
 	return &lfuCache[K, V]{

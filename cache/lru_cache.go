@@ -1,4 +1,4 @@
-package cacheUtil
+package cache
 
 import (
 	"fmt"
@@ -22,7 +22,7 @@ type lruCache[K comparable, V any] struct {
 
 func NewLRUCache[K comparable, V any](capacity int) (Cache[K, V], error) {
 	if capacity <= 0 {
-		return nil, fmt.Errorf("can not initiate cache of size: %d", capacity)
+		return nil, fmt.Errorf("invalid cache size: %d", capacity)
 	}
 	head := &lruNode[K, V]{}
 	tail := &lruNode[K, V]{}

@@ -1,4 +1,4 @@
-package cacheUtil
+package cache
 
 type Cache[K comparable, V any] interface {
 	Get(key K) (V, bool)
